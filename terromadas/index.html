@@ -3,106 +3,134 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Terromadas | Agencia de viajes y turismo</title>
-<meta name="description" content="Terromadas, agencia de turismo. Paquetes, ofertas y viajes a tu medida. Consultá por WhatsApp.">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com; base-uri 'self'; form-action 'none'">
+<title>Terromadas | Viajes y Turismo</title>
+<meta name="description" content="Terromadas, agencia de viajes y turismo. Paquetes, ofertas y viajes a tu medida. Consultá por WhatsApp.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com; base-uri 'self'; form-action 'none'">
 <link rel="stylesheet" href="css/style.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%232e4a3b'/%3E%3Cpath d='M8 46 24 24l10 13 8-10 14 19z' fill='%23e0a458'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="img/isotipo-rojo.png">
 </head>
 <body>
 
 <header class="nav">
   <div class="wrap">
-    <a class="logo" href="#inicio" aria-label="Terromadas, inicio">
-      <svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#2e4a3b"/><circle cx="43" cy="22" r="6" fill="#e0a458"/><path d="M8 47 24 25l10 13 8-10 14 19z" fill="#f7f1e6"/><path d="M8 47 24 25l6 8-9 14z" fill="#b4532a"/></svg>
-      Terromadas
-    </a>
+    <a class="logo" href="#inicio" aria-label="Terromadas, inicio"><img class="brandimg" src="img/logo-rojo.png" alt="Terromadas Viajes y Turismo"></a>
     <button class="burger" id="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="menu">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      <svg class="i" style="width:28px;height:28px" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
     <nav class="menu" id="menu" aria-label="Principal">
       <a href="#inicio">Inicio</a>
-      <a href="#ofertas">Ofertas</a>
-      <a href="#paquetes">Paquetes</a>
+      <a href="#vidriera">Paquetes</a>
+      <a href="#quince" id="navQ15" hidden>Viajes de 15</a>
       <a href="#nosotros">Nosotros</a>
-      <a href="#contacto">Contacto</a>
-      <a class="btn btn-clay" id="navArma" href="#" target="_blank" rel="noopener noreferrer">Armá tu viaje</a>
+      <a href="#consulta">Contacto</a>
+      <a class="btn btn-red" id="navArma" href="#" target="_blank" rel="noopener noreferrer">Armá tu viaje</a>
     </nav>
   </div>
 </header>
 
 <main>
 <section class="hero" id="inicio">
-  <img class="hero-img" id="heroImg" alt="" hidden>
-  <svg class="hero-art" id="heroArt" viewBox="0 0 800 330" aria-hidden="true"><circle cx="610" cy="90" r="54" fill="#f6d9a0" opacity=".85"/><path d="M0 260 170 100 300 220 450 60 640 240 800 150V330H0Z" fill="#1f3429" opacity=".55"/><path d="M0 300 220 190 420 290 620 170 800 280V330H0Z" fill="#14261d" opacity=".7"/></svg>
+  <div class="hero-slides" id="heroSlides" aria-hidden="true"></div>
   <div class="wrap">
-    <div class="eyebrow">Agencia de viajes y turismo</div>
-    <h1 id="heroTitle">Viajá distinto. Viajá terromada.</h1>
-    <p class="lead" id="heroText"></p>
-    <div class="actions">
-      <a class="btn btn-clay" href="#paquetes">Ver paquetes</a>
-      <a class="btn btn-line" href="#ofertas">Ofertas de la semana</a>
+    <div class="hero-in">
+      <h1><span id="heroTitle">Viajá. Explorá.</span><b id="heroTitle2">Viví el mundo.</b></h1>
+      <span class="script" id="heroScript"></span>
+      <p class="lead" id="heroText"></p>
+      <div class="actions">
+        <a class="btn btn-gold" href="#vidriera">Ver nuestros paquetes <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></a>
+        <a class="btn btn-ghost" id="heroArma" href="#" target="_blank" rel="noopener noreferrer">Armá tu viaje</a>
+      </div>
     </div>
   </div>
 </section>
+<div class="search"><div class="wrap">
+  <form class="searchbar" id="search" role="search">
+    <label class="sf"><svg class="i" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg><span class="t"><b>¿A dónde querés ir?</b><input type="text" id="sDest" placeholder="Escribí tu destino" maxlength="60" autocomplete="off"></span></label>
+    <label class="sf"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span class="t"><b>Fecha deseada</b><input type="date" id="sDate"></span></label>
+    <label class="sf"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg><span class="t"><b>Pasajeros</b><select id="sPax"><option value="1">1 persona</option><option value="2" selected>2 personas</option><option value="3">3 personas</option><option value="4">4 personas</option><option value="5">5 personas</option><option value="6">6 personas</option><option value="8">8 personas</option><option value="10">10 o más</option></select></span></label>
+    <button class="btn btn-red" id="sGo" type="button">Cotizar por WhatsApp</button>
+  </form>
+</div></div>
 
-<div class="quick"><div class="wrap"><div class="grid">
-  <a class="qcard" href="#paquetes"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4zM3 12l9 4 9-4M3 17l9 4 9-4"/></svg></span><b>Paquetes</b><span>Explorá destinos y salidas</span></a>
-  <a class="qcard" href="#ofertas"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12l-8 8-9-9V3h8l9 9zM7.5 7.5h.01"/></svg></span><b>Ofertas</b><span>Las mejores oportunidades</span></a>
-  <a class="qcard" id="quickArma" href="#" target="_blank" rel="noopener noreferrer"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20l9-16-9 4-9-4 9 16z"/></svg></span><b>Armá tu viaje</b><span>A tu medida, paso a paso</span></a>
-  <a class="qcard" href="#contacto"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 0 1-12 7l-5 1 1-4a8 8 0 1 1 16-4z"/></svg></span><b>Contacto</b><span>Escribinos por WhatsApp</span></a>
+<div class="trust"><div class="wrap"><div class="row">
+  <div class="it"><svg class="i" viewBox="0 0 24 24"><path d="M12 21s-8-5.5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.5-8 11-8 11z"/></svg>Atención personalizada</div>
+  <div class="it"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>Acompañamiento antes, durante y después</div>
+  <div class="it"><svg class="i" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>Confianza, respaldo y tranquilidad</div>
+  <div class="it"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>Muchas formas de viajar</div>
 </div></div></div>
 
-<section class="s offers" id="ofertas">
+<section class="s" id="vidriera">
   <div class="wrap">
-    <div class="sh"><div><div class="eyebrow">Ofertas destacadas</div><h2>Oportunidades para salir ya</h2></div><p>Cupos limitados y precios especiales por tiempo acotado.</p></div>
-    <div class="cards" id="offerCards"></div>
+    <div class="sh"><div><div class="eyebrow">Nuestros paquetes</div><h2>¿A dónde te gustaría <span class="script">viajar?</span></h2></div><p>Elegí un destino y mirá nuestras propuestas. Consultá por WhatsApp y te contamos todos los detalles.</p></div>
+    <div class="fchips" id="vidFilters" role="group" aria-label="Elegí un destino"></div>
+    <div class="cards4" id="vidCards"></div>
+    <div class="more" id="vidMore"></div>
   </div>
 </section>
 
-<section class="s" id="paquetes">
-  <div class="wrap">
-    <div class="sh"><div><div class="eyebrow" style="color:var(--clay)">Paquetes</div><h2>Elegí tu próximo destino</h2></div><p>Filtrá por destino o buscá por nombre. Cada paquete tiene su botón de consulta directa.</p></div>
-    <div class="filters">
-      <label class="sr" for="q">Buscar</label>
-      <input id="q" type="search" placeholder="Buscar destino o paquete…">
-      <label class="sr" for="dest">Destino</label>
-      <select id="dest"><option value="">Todos los destinos</option></select>
-    </div>
-    <div class="cards" id="pkgCards"></div>
-  </div>
+<section class="s" id="quince" style="padding-top:0" hidden>
+  <div class="wrap"><div class="q15">
+    <div class="q15-txt"><div class="eyebrow">Para una fecha inolvidable</div><h2 id="q15Title"></h2><p id="q15Text"></p></div>
+    <div class="q15-docs" id="q15Docs"></div>
+  </div></div>
 </section>
 
 <section class="s" style="padding-top:0">
   <div class="wrap"><div class="arma">
-    <div><h2>¿No encontrás lo que buscás? Armalo vos.</h2><p>Elegí destino, fechas y servicios, y armamos el viaje a tu medida.</p></div>
-    <a class="btn btn-moss" id="bandArma" href="#" target="_blank" rel="noopener noreferrer">Armá tu viaje →</a>
+    <img class="mark" src="img/isotipo-blanco.png" alt="" aria-hidden="true">
+    <div><div class="eyebrow">El próximo destino</div><h2>Tu próximo viaje <span class="script">puede empezar hoy</span></h2><p>Contanos qué destino tenés en mente o simplemente esas ganas de viajar que todavía no tienen un lugar definido. Juntos podemos darle forma.</p></div>
+    <a class="btn btn-gold" id="bandArma" href="#" target="_blank" rel="noopener noreferrer">Quiero empezar a planear mi viaje <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 5l7 7-7 7"/></svg></a>
   </div></div>
 </section>
 
 <section class="s" id="nosotros" style="padding-top:0">
-  <div class="wrap about">
-    <div><div class="eyebrow" style="color:var(--clay)">Nosotros</div><h2 style="font-size:clamp(30px,4vw,44px)">Viajar es mejor con alguien que te acompaña</h2><p id="aboutText"></p></div>
-    <div class="vals">
-      <div class="val"><div><b>Atención personal</b><span>Hablás siempre con una persona, antes, durante y después del viaje.</span></div></div>
-      <div class="val"><div><b>Precios claros</b><span>Te mostramos qué incluye cada paquete, sin sorpresas.</span></div></div>
-      <div class="val"><div><b>Viajes a tu medida</b><span>Si no está en el catálogo, lo armamos juntos.</span></div></div>
+  <div class="wrap">
+    <div class="nos">
+      <div class="nos-photo">
+        <div class="nos-ph" id="aboutArt"><img src="img/isotipo-rojo.png" alt=""></div>
+        <img id="aboutImg" alt="" hidden>
+      </div>
+      <div>
+        <div class="eyebrow">Nuestra historia</div>
+        <h2>Una pasión por descubrir que se convirtió en <span class="script">proyecto</span></h2>
+        <div id="aboutText"></div>
+        <div class="sign"><b id="ownerName"></b><span id="ownerRole"></span></div>
+      </div>
+    </div>
+    <div class="nos-name">
+      <img src="img/isotipo-blanco.png" alt="" aria-hidden="true">
+      <div><div class="eyebrow">¿Sabías de dónde viene nuestro nombre?</div><h3>Tierra + Nómades = Terromadas</h3><p>Una palabra creada para representar esa necesidad que llevamos dentro de seguir recorriendo, descubriendo y conociendo nuevos lugares.</p></div>
     </div>
   </div>
+</section>
+<section class="s" id="consulta" style="padding-top:0">
+  <div class="wrap"><div class="cbox">
+    <div><div class="eyebrow">Contacto</div><h2>Contanos <span class="script">qué soñás</span></h2><p>Dejanos tus datos y qué viaje tenés en mente. Te asesoramos sin compromiso.</p></div>
+    <div id="contactForm"></div>
+  </div></div>
 </section>
 </main>
 
 <footer id="contacto">
   <div class="wrap">
-    <div><h3>Terromadas</h3><p id="footCity" style="max-width:300px">Agencia de viajes y turismo.</p></div>
-    <div><h3>Contacto</h3><a id="footWa" href="#" target="_blank" rel="noopener noreferrer">WhatsApp</a><a id="footIg" href="#" target="_blank" rel="noopener noreferrer" hidden>Instagram</a><a id="footMail" href="#" hidden></a></div>
-    <div><h3>Secciones</h3><a href="#ofertas">Ofertas</a><a href="#paquetes">Paquetes</a><a href="#nosotros">Nosotros</a></div>
-    <div class="fine">© <span id="year"></span> Terromadas. Los precios y disponibilidad pueden cambiar sin previo aviso.</div>
+    <div><img class="brandimg" style="--h:96px;margin-inline:-26px auto" src="img/logo-blanco.png" alt="Terromadas Viajes y Turismo"><span class="script">¡Viví experiencias únicas!</span></div>
+    <div><h3>Enlaces</h3><a href="#inicio">Inicio</a><a href="#vidriera">Paquetes</a><a href="#nosotros">Nosotros</a><a href="#contacto">Contacto</a></div>
+    <div><h3>Seguinos</h3>
+      <div class="soc">
+        <a id="footIg" href="#" target="_blank" rel="noopener noreferrer" aria-label="Instagram" hidden><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".6"/></svg></a>
+        <a id="footFb" href="#" target="_blank" rel="noopener noreferrer" aria-label="Facebook" hidden><svg class="i" viewBox="0 0 24 24"><path d="M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8z"/></svg></a>
+        <a id="footTk" href="#" target="_blank" rel="noopener noreferrer" aria-label="TikTok" hidden><svg class="i" viewBox="0 0 24 24"><path d="M14 3v11a4 4 0 1 1-4-4M14 3c0 2.5 2 4.5 5 4.5"/></svg></a>
+        <a id="footWaIc" href="#" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp"><svg class="i" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-12 7l-5 1 1-4a8 8 0 1 1 16-4z"/></svg></a>
+      </div>
+      <a id="footMail" href="#" hidden style="margin-top:8px"></a>
+    </div>
+    <div><h3>Escribinos</h3><p id="footAddr"></p><p id="footHours"></p><p id="footLegajo" class="legajo"></p><p id="footCity" hidden></p><div style="height:12px"></div><a class="btn btn-gold" id="footWa" href="#" target="_blank" rel="noopener noreferrer" style="display:inline-flex">Consultar por WhatsApp</a></div>
+    <div class="fine">© <span id="year"></span> Terromadas. Viajes y Turismo. Seguimiento permanente. Los precios y la disponibilidad pueden cambiar sin previo aviso.<br>Desarrollado por <b>Studio Novaire</b></div>
   </div>
 </footer>
 
 <a class="wa-fab" id="fab" href="#" target="_blank" rel="noopener noreferrer" aria-label="Escribinos por WhatsApp">
-  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5A11 11 0 0 0 3.2 16.8L2 22l5.3-1.4A11 11 0 1 0 20.5 3.5zM12 20a8.9 8.9 0 0 1-4.5-1.2l-.3-.2-3.1.8.8-3-.2-.3A9 9 0 1 1 12 20zm5-6.6c-.3-.1-1.6-.8-1.9-.9s-.5-.1-.7.1-.8.9-.9 1.1-.3.2-.6.1a7.3 7.3 0 0 1-3.6-3.1c-.3-.5.3-.4.8-1.4a.6.6 0 0 0 0-.5l-.9-2c-.2-.5-.5-.4-.7-.4h-.6a1.2 1.2 0 0 0-.9.4 3.700 3.700 0 0 0-1.100 2.700 6.400 6.400 0 0 0 1.300 3.400 14.600 14.600 0 0 0 5.600 4.900c2.100.9 2.100.6 2.500.6a2.100 2.100 0 0 0 1.400-1 1.700 1.700 0 0 0 .1-1c-.1-.1-.3-.2-.6-.3z"/></svg>
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 3.5A11 11 0 0 0 3.2 16.8L2 22l5.3-1.4A11 11 0 1 0 20.5 3.5zM12 20a8.9 8.9 0 0 1-4.5-1.2l-.3-.2-3.1.8.8-3-.2-.3A9 9 0 1 1 12 20zm5-6.6c-.3-.1-1.6-.8-1.9-.9s-.5-.1-.7.1-.8.9-.9 1.1-.3.2-.6.1a7.3 7.3 0 0 1-3.6-3.1c-.3-.5.3-.4.8-1.4a.6.6 0 0 0 0-.5l-.9-2c-.2-.5-.5-.4-.7-.4h-.6a1.2 1.2 0 0 0-.9.4 3.7 3.7 0 0 0-1.1 2.7 6.4 6.4 0 0 0 1.3 3.4 14.6 14.6 0 0 0 5.6 4.9c2.1.9 2.1.6 2.5.6a2.1 2.1 0 0 0 1.4-1 1.7 1.7 0 0 0 .1-1c-.1-.1-.3-.2-.6-.3z"/></svg>
 </a>
 
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="sheet" id="sheet"></div></div>

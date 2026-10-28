@@ -10,7 +10,7 @@
 .fld small{color:var(--muted);font-size:12px}
 .top{background:var(--moss);color:#fff}
 .top .wrap{display:flex;align-items:center;justify-content:space-between;height:62px;gap:12px}
-.top b{font-family:'Fraunces',serif;font-size:20px}
+.top b{font-family:'Poppins',sans-serif;font-size:20px}
 .top .btn{padding:8px 14px;min-height:38px;font-size:14px}
 .tabs{display:flex;gap:6px;margin:22px 0 18px;overflow-x:auto}
 .tabs button{border:0;background:#e7dfcd;border-radius:10px;padding:11px 18px;font-weight:700;color:var(--ink);white-space:nowrap}
@@ -49,3 +49,29 @@
   .row{grid-template-columns:64px 1fr}.row img{width:64px;height:52px}.row .acts{grid-column:1/-1;justify-content:flex-start}
   .two{grid-template-columns:1fr}
 }
+/* Tarjetas del banner de quince: foto + datos juntos */
+.doc-card{border:1px solid #e3d6c4;border-radius:14px;padding:14px;margin:0;background:#fffaf2}
+.doc-card legend{font-weight:700;padding:0 8px;color:#701f1d}
+.doc-grid{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start}
+.doc-photo{display:grid;gap:8px}
+.doc-prev{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:10px}
+.doc-photo-ctl{display:grid;gap:6px}
+.doc-photo-ctl input{max-width:100%;font-size:.85rem}
+.doc-data{display:grid;gap:10px}
+@media(max-width:560px){.doc-grid{grid-template-columns:1fr}}
+.doc-photo-ctl label{font-size:.85rem;font-weight:700;color:#701f1d}
+.doc-photo,.doc-photo-ctl{min-width:0}
+.doc-photo-ctl input[type=url],.doc-photo-ctl input[type=file]{width:100%;box-sizing:border-box}
+.doc-photo-ctl .sm{width:100%}
+/* paquetes agrupados por destino */
+.sec{margin-top:30px;scroll-margin-top:90px}
+.sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e3d6c4}
+.sec-h h3{font-size:22px;color:#701f1d}
+.sec-h .count{font-size:13px;font-weight:700;color:var(--muted);margin-left:8px}
+a.chip.jump{text-decoration:none;cursor:pointer}
+/* pestañas por destino en Paquetes */
+.ptabs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 20px}
+.ptab{border:1.5px solid #e3d6c4;background:#fff;color:#701f1d;font:inherit;font-weight:700;font-size:14px;padding:9px 16px;border-radius:999px;cursor:pointer}
+.ptab:hover{background:#fff6e6}
+.ptab[aria-selected="true"]{background:#b51310;border-color:#b51310;color:#fff}
+.ptab.full:not([aria-selected="true"]){border-color:#e0a09a}

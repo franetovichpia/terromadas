@@ -1,21 +1,44 @@
 export const CONFIG = {
   firebase: {
-    apiKey: '',
-    authDomain: '',
-    projectId: '',
-    appId: ''
+    apiKey: 'AIzaSyBaYn5e5Fm9kBee5Sgi0AQRAouvIOmH8kU',
+    authDomain: 'terromadas-web.firebaseapp.com',
+    projectId: 'terromadas-web',
+    appId: '1:40319812168:web:57d80b9bcb5c514d330e7d'
   },
   demoPassword: 'terromadas',
-  maxOffers: 5,
+  maxPerCategory: 10,
+  maxFeatured: 8,
+  // Fotos del inicio: están en el código (carpeta img/hero), no se cambian desde el panel
+  // Se escriben sin extensión: sirve .jpg, .jpeg o .webp. Para sumar más fotos, agregalas acá
+  heroSlides: ['img/hero/lago', 'img/hero/mar', 'img/hero/rio', 'img/hero/catedral'],
+  heroInterval: 2500, // milisegundos entre foto y foto
+  categories: ['Argentina', 'Brasil', 'Caribe', 'Salidas grupales'],
   defaults: {
-    whatsapp: '5491121542210',
-    armaUrl: '',
-    heroTitle: 'Viajá distinto. Viajá terromada.',
-    heroText: 'Paquetes, escapadas y viajes armados a tu medida, con atención personal de principio a fin.',
-    about: 'Somos Terromadas, una agencia de turismo para quienes viajan con ganas de vivir cada lugar. Te acompañamos desde que elegís el destino hasta que volvés, con propuestas claras, precios transparentes y trato directo.',
-    instagram: 'terromadas',
-    email: '',
-    city: '',
-    heroImage: ''
+    whatsapp: '5493571347478',
+    armaUrl: 'https://www.terromadasviajes.com',
+    heroTitle: 'Viajá. Explorá.',
+    heroTitle2: 'Viví el mundo.',
+    heroScript: 'Viví experiencias únicas.',
+    heroText: 'Te escuchamos, entendemos qué estás buscando y te acompañamos para transformar esa idea en una experiencia pensada para vos.',
+    about: 'Terromadas nació hace años como un proyecto vinculado a las visitas guiadas y fue creciendo hasta transformarse en una agencia de viajes.\n\nHoy, acompañamos a nuestros pasajeros a descubrir nuevos destinos, manteniendo algo que estuvo desde el comienzo: la atención cercana y personalizada.\n\nPor eso, nuestra misión es acompañarte en cada etapa de tu viaje, desde la planificación hasta tu regreso, ofreciendo un servicio personalizado, confiable y de excelencia.\n\nTu próximo viaje comienza con la confianza de estar en buenas manos. ¡Bienvenidos!',
+    owner: 'Flavia Mariel Garcia',
+    ownerRole: 'Lic. en Turismo · Titular responsable de Terromadas Viajes',
+    address: 'Bolívar 347, Río Tercero, Córdoba',
+    hours: 'Atención personalizada de lunes a viernes',
+    legajo: 'Legajo RNAV 19334',
+    instagram: '',
+    facebook: '',
+    tiktok: '',
+    email: 'info@terromadasviajes.com',
+    city: 'Río Tercero, Córdoba',
+    heroImage: '',
+    q15Title: 'Tu viaje de quince',
+    q15Mode: 'ver',
+    q15Text: 'Elegí tu destino y descargá la información: itinerarios, qué incluye y tarifas.',
+    q15Label1: 'Crucero', q15Url1: '',
+    q15Label2: 'Camboriú', q15Url2: '',
+    q15Label3: 'Disney', q15Url3: '',
+    q15Label4: 'Tarifas del crucero 2027-2029', q15Url4: '',
+    aboutImage: ''
   }
 };

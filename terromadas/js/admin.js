@@ -7,9 +7,14 @@ let packages = [];
 let settings = {};
 let tab = 'paquetes';
 
-const MAX = CONFIG.maxOffers;
-const PHOTO_BUDGET = 850000;
-const activeOffers = (ex) => packages.filter(p => p.offer && p.status === 'active' && p.id !== ex).sort((a, b) => (a.offerOrder || 0) - (b.offerOrder || 0));
+const MAX = CONFIG.maxPerCategory;
+const PHOTO_BUDGET = 850000; // caracteres base64 por paquete (límite de Firestore: 1 MB por documento)
+const catOf = c => (CONFIG.categories.includes(c) ? c : '');
+const shown = (cat, ex) => packages.filter(p => catOf(p.category) === cat && p.status !== 'paused' && p.id !== ex);
+const full = (cat, ex) => !!catOf(cat) && shown(catOf(cat), ex).length >= MAX;
+const MAXF = CONFIG.maxFeatured;
+const featCount = ex => packages.filter(p => p.featured && p.status !== 'paused' && p.id !== ex).length;
+const catMsg = cat => `"${cat}" ya tiene ${MAX} paquetes visibles. Guardá o eliminá uno de ese tipo para poder mostrar otro.`;
 const lines = t => t.split('\n').map(s => s.trim()).filter(Boolean);
 
 /* ---------- imágenes ---------- */
@@ -38,6 +43,16 @@ async function fit(list, budget = PHOTO_BUDGET) {
   return list;
 }
 
+// Mensaje claro según el motivo real del error de Firebase
+function loginError(ex) {
+  const c = ex && ex.code || '';
+  if (/invalid-credential|wrong-password|user-not-found|invalid-email/.test(c)) return 'Correo o contraseña incorrectos.';
+  if (c.includes('too-many-requests')) return 'Demasiados intentos. Esperá unos minutos y probá de nuevo.';
+  if (c.includes('operation-not-allowed')) return 'El ingreso con correo y contraseña no está activado en Firebase (Authentication → Método de acceso).';
+  if (c.includes('network')) return 'No hay conexión con Firebase. Revisá tu internet.';
+  if (c.includes('api-key') || c.includes('app-not-authorized')) return 'La clave de Firebase de config.js no es válida. Revisá apiKey y projectId.';
+  return 'No se pudo ingresar (' + (c || ex.message || 'error') + ').';
+}
 /* ---------- login ---------- */
 function showLogin() {
   const email = h('input', { type: 'email', id: 'em', autocomplete: 'username', required: true, placeholder: 'correo@ejemplo.com' });
@@ -46,7 +61,7 @@ function showLogin() {
   const form = h('form', { class: 'lbox', onsubmit: async e => {
     e.preventDefault(); err.hidden = true;
     try { await store.login(email.value.trim(), pw.value); if (isDemo) showPanel(); }
-    catch (ex) { err.textContent = isDemo ? ex.message : 'Correo o contraseña incorrectos.'; err.hidden = false; pw.value = ''; }
+    catch (ex) { err.textContent = isDemo ? ex.message : loginError(ex); err.hidden = false; pw.value = ''; }
   } },
     h('h1', {}, 'Panel de Terromadas'),
     isDemo ? h('div', { class: 'demo-note' }, 'MODO DEMO: los datos se guardan solo en este navegador. Contraseña: ', h('b', {}, CONFIG.demoPassword)) : null,
@@ -67,7 +82,7 @@ async function showPanel() {
 }
 
 function renderPanel() {
-  const tabs = [['paquetes', 'Paquetes'], ['ofertas', `Ofertas (${activeOffers().length}/${MAX})`], ['ajustes', 'Ajustes']];
+  const tabs = [['paquetes', 'Paquetes'], ['ajustes', 'Ajustes']];
   app.replaceChildren(
     h('header', { class: 'top' }, h('div', { class: 'wrap' }, h('b', {}, 'Terromadas · Panel'),
       h('div', { style: 'display:flex;gap:8px' },
@@ -75,7 +90,7 @@ function renderPanel() {
         h('button', { class: 'btn btn-clay', onclick: () => store.logout().then(() => !isDemo || showLogin()) }, 'Salir')))),
     h('main', { class: 'wrap', style: 'padding-bottom:60px' },
       h('div', { class: 'tabs', role: 'tablist' }, tabs.map(([k, l]) => h('button', { role: 'tab', 'aria-selected': tab === k, onclick: () => { tab = k; renderPanel(); } }, l))),
-      tab === 'paquetes' ? viewPackages() : tab === 'ofertas' ? viewOffers() : viewSettings()));
+      tab === 'paquetes' ? viewPackages() : viewSettings()));
 }
 
 async function patch(id, data, msg) {
@@ -83,75 +98,74 @@ async function patch(id, data, msg) {
   catch (e) { toast('No se pudo guardar: ' + e.message, 'err'); }
 }
 
-function capFull(ex) { return activeOffers(ex).length >= MAX; }
-const CAP_MSG = `Ya hay ${MAX} ofertas activas. Quitá una en la pestaña "Ofertas" o reemplazala.`;
 
-/* ---------- vista paquetes ---------- */
+/* ---------- vista paquetes: pestañas por destino, se ve una categoría por vez ---------- */
+let ptab = CONFIG.categories[0];
+const FEAT_TAB = '__destacados', ORPHAN_TAB = '__sin_tipo';
+
 function viewPackages() {
-  const sorted = [...packages].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  return h('div', {},
-    h('div', { class: 'bar' }, h('h2', {}, `Paquetes (${packages.length})`), h('button', { class: 'btn btn-clay', onclick: () => openForm(null) }, '+ Nuevo paquete')),
-    sorted.length ? h('div', { class: 'list' }, sorted.map(rowFor)) : h('div', { class: 'empty' }, 'Todavía no cargaste paquetes. Tocá "Nuevo paquete".'));
-}
+  const newest = (a, b) => (b.createdAt || 0) - (a.createdAt || 0);
+  const byCat = c => packages.filter(p => catOf(p.category) === c).sort(newest);
+  const orphans = packages.filter(p => !catOf(p.category)).sort(newest);
+  const feats = packages.filter(p => p.featured && p.status !== 'paused').sort(newest);
+  const tabs = [
+    ...CONFIG.categories.map(c => ({ key: c, label: c, n: byCat(c).length, warn: shown(c).length >= MAX })),
+    { key: FEAT_TAB, label: '★ Destacados', n: feats.length, warn: feats.length >= MAXF },
+    ...(orphans.length ? [{ key: ORPHAN_TAB, label: 'Sin clasificar', n: orphans.length, warn: true }] : [])
+  ];
+  if (!tabs.some(x => x.key === ptab)) ptab = CONFIG.categories[0];
 
+  const isCat = CONFIG.categories.includes(ptab);
+  const list = isCat ? byCat(ptab) : ptab === FEAT_TAB ? feats : orphans;
+  const title = isCat ? ptab : ptab === FEAT_TAB ? 'Destacados del inicio' : 'Sin clasificar';
+  const info = isCat ? `${shown(ptab).length}/${MAX} visibles en el sitio · ${list.length} en total`
+    : ptab === FEAT_TAB ? `${feats.length}/${MAXF} destacados · aparecen primero en el inicio`
+    : 'Editá cada uno y elegí su tipo de viaje';
+  const emptyMsg = isCat ? `Todavía no cargaste paquetes de ${ptab}.` : ptab === FEAT_TAB ? 'Todavía no destacaste ningún paquete. Usá el botón "★ Destacar" en cualquier paquete.' : '';
+
+  return h('div', {},
+    h('div', { class: 'bar' }, h('h2', {}, `Paquetes (${packages.length})`), h('button', { class: 'btn btn-clay', onclick: () => openForm(null, isCat ? ptab : '') }, '+ Nuevo paquete')),
+    h('div', { class: 'ptabs', role: 'tablist' }, tabs.map(x => h('button', { class: 'ptab' + (x.warn ? ' full' : ''), role: 'tab', type: 'button', 'aria-selected': ptab === x.key, onclick: () => { ptab = x.key; renderPanel(); } }, `${x.label} (${x.n})`))),
+    h('div', { class: 'sec-h' },
+      h('h3', {}, title, h('span', { class: 'count' }, '  ' + info)),
+      isCat ? h('button', { class: 'sm edit', onclick: () => openForm(null, ptab) }, `+ Nuevo en ${ptab}`) : null),
+    list.length ? h('div', { class: 'list' }, list.map(rowFor)) : h('div', { class: 'empty' }, emptyMsg));
+}
 function rowFor(p) {
-  const st = { active: ['Activo', ''], paused: ['Pausado', 'paused'], soldout: ['Agotado', 'soldout'] }[p.status] || ['Activo', ''];
+  const st = { active: ['Disponible', ''], paused: ['Guardado', 'paused'], soldout: ['Agotado', 'soldout'] }[p.status] || ['Activo', ''];
   return h('div', { class: 'row' },
     safeImg(p.thumb) ? h('img', { src: p.thumb, alt: '' }) : h('div', { style: 'width:84px;height:64px;background:var(--sand2);border-radius:8px' }),
     h('div', {}, h('h3', {}, p.title), h('div', { class: 'sub' }, `${p.destination || '—'} · ${p.duration || '—'} · ${fmtPrice(p.price, p.currency)}`),
-      h('div', { class: 'chips' }, h('span', { class: 'chip ' + st[1] }, st[0]), p.offer ? h('span', { class: 'chip offer' }, 'Oferta') : null)),
+      h('div', { class: 'chips' }, h('span', { class: 'chip ' + st[1] }, st[0]), h('span', { class: 'chip offer' }, p.category || 'Sin tipo'), p.featured ? h('span', { class: 'chip offer' }, '★ Destacado') : null)),
     h('div', { class: 'acts' },
-      h('button', { class: 'sm', onclick: () => openForm(p) }, 'Editar'),
-      h('button', { class: 'sm', onclick: () => setStatus(p, p.status === 'paused' ? 'active' : 'paused') }, p.status === 'paused' ? 'Activar' : 'Pausar'),
-      h('button', { class: 'sm', onclick: () => setStatus(p, p.status === 'soldout' ? 'active' : 'soldout') }, p.status === 'soldout' ? 'Hay cupo' : 'Agotado'),
+      p.status !== 'paused' ? h('button', { class: p.featured ? 'sm vid on' : 'sm vid', onclick: () => toggleFeatured(p) }, p.featured ? 'Quitar de destacados' : '★ Destacar') : null,
+      h('button', { class: 'sm edit', onclick: () => openForm(p) }, 'Editar'),
+      h('button', { class: p.status === 'paused' ? 'sm ok' : 'sm hide', onclick: () => setStatus(p, p.status === 'paused' ? 'active' : 'paused') }, p.status === 'paused' ? 'Reactivar' : 'Guardar sin mostrar'),
+      h('button', { class: p.status === 'soldout' ? 'sm ok' : 'sm sold', onclick: () => setStatus(p, p.status === 'soldout' ? 'active' : 'soldout') }, p.status === 'soldout' ? 'Hay cupo' : 'Marcar agotado'),
       h('button', { class: 'sm danger', onclick: () => del(p) }, 'Eliminar')));
 }
 
+function toggleFeatured(p) {
+  if (p.featured) return patch(p.id, { featured: false }, 'Quitado de destacados');
+  if (featCount(p.id) >= MAXF) return toast(`Ya hay ${MAXF} destacados. Quitá uno para poder destacar otro.`, 'err');
+  patch(p.id, { featured: true }, 'Agregado a destacados');
+}
+
 function setStatus(p, status) {
-  if (status === 'active' && p.offer && capFull(p.id)) return toast(CAP_MSG, 'err');
-  patch(p.id, { status }, { active: 'Paquete activo', paused: 'Paquete pausado (no se ve en el sitio)', soldout: 'Marcado como agotado' }[status]);
+  if (status !== 'paused' && p.status === 'paused' && full(p.category, p.id)) return toast(catMsg(catOf(p.category)), 'err');
+  patch(p.id, status === 'paused' ? { status, featured: false } : { status }, { active: 'Paquete disponible', paused: 'Paquete guardado (ya no se muestra en el sitio)', soldout: 'Marcado como agotado' }[status]);
 }
 
 async function del(p) {
-  if (!confirm(`¿Eliminar "${p.title}" definitivamente?\n\nSi solo querés que no se vea, usá "Pausar".`)) return;
+  if (!confirm(`¿Eliminar "${p.title}" definitivamente?\n\nSi solo querés que no se vea, usá "Guardar sin mostrar".`)) return;
   try { await store.deletePackage(p.id); packages = packages.filter(x => x.id !== p.id); renderPanel(); toast('Paquete eliminado'); }
   catch (e) { toast('No se pudo eliminar: ' + e.message, 'err'); }
 }
 
-/* ---------- vista ofertas ---------- */
-function viewOffers() {
-  const offers = activeOffers();
-  const candidates = packages.filter(p => p.status === 'active' && !p.offer);
-  const swap = (slot, current) => {
-    const sel = h('select', { 'aria-label': current ? 'Reemplazar por' : 'Agregar oferta', onchange: async e => {
-      const id = e.target.value; if (!id) return;
-      try {
-        if (current) await store.patchPackage(current.id, { offer: false, offerOrder: 0 }), Object.assign(current, { offer: false, offerOrder: 0 });
-        const np = packages.find(x => x.id === id);
-        await store.patchPackage(id, { offer: true, offerOrder: slot }); Object.assign(np, { offer: true, offerOrder: slot });
-        renderPanel(); toast('Oferta actualizada');
-      } catch (ex) { toast('No se pudo guardar: ' + ex.message, 'err'); }
-    } }, h('option', { value: '' }, current ? 'Reemplazar por…' : 'Elegir paquete…'), candidates.map(c => h('option', { value: c.id }, c.title)));
-    return h('div', { class: 'fld' }, sel);
-  };
-  const slots = Array.from({ length: MAX }, (_, i) => {
-    const cur = offers[i];
-    return h('div', { class: 'slot' + (cur ? ' on' : '') },
-      h('b', {}, `Oferta ${i + 1}`),
-      cur ? [safeImg(cur.thumb) ? h('img', { src: cur.thumb, alt: '' }) : null, h('div', {}, h('b', {}, cur.title), h('div', { class: 'sub' }, fmtPrice(cur.price, cur.currency))),
-        h('button', { class: 'sm danger', onclick: () => patch(cur.id, { offer: false, offerOrder: 0 }, 'Quitada de ofertas') }, 'Quitar de ofertas')] : h('div', { class: 'sub' }, 'Lugar libre'),
-      candidates.length ? swap(i + 1, cur) : null);
-  });
-  return h('div', {},
-    h('div', { class: 'bar' }, h('h2', {}, 'Ofertas destacadas'), h('span', { class: 'count' }, `${offers.length} de ${MAX} activas`)),
-    h('p', { class: 'help', style: 'margin-bottom:16px' }, `Podés tener hasta ${MAX} ofertas activas al mismo tiempo. Cambialas o reemplazalas cuando quieras, sin costo. Para que un paquete aparezca acá tiene que estar activo.`),
-    h('div', { class: 'slots' }, slots));
-}
-
 /* ---------- formulario de paquete ---------- */
-async function openForm(pkg) {
+async function openForm(pkg, defCat) {
   const isNew = !pkg;
-  const p = pkg ? { ...pkg } : { id: uid(), status: 'active', offer: false, offerOrder: 0, currency: 'ARS', priceNote: 'por persona', createdAt: Date.now() };
+  const p = pkg ? { ...pkg } : { id: uid(), category: defCat || '', status: 'active', offer: false, offerOrder: 0, currency: 'ARS', priceNote: 'por persona', createdAt: Date.now() };
   let photos = []; let changed = false;
   const modal = h('div', { class: 'modal open', role: 'dialog', 'aria-modal': 'true', 'aria-label': isNew ? 'Nuevo paquete' : 'Editar paquete' });
   const sheet = h('div', { class: 'sheet formsheet' });
@@ -172,8 +186,9 @@ async function openForm(pkg) {
     dates: h('textarea', { placeholder: '12/12/2026 al 19/12/2026\n09/01/2027 al 16/01/2027' }, (p.dates || []).join('\n')),
     description: h('textarea', { maxlength: 1200 }, p.description || ''),
     includes: h('textarea', { placeholder: 'Aéreo ida y vuelta\nTraslados\n7 noches de hotel' }, (p.includes || []).join('\n')),
-    status: h('select', {}, [['active', 'Activo (visible)'], ['paused', 'Pausado (oculto)'], ['soldout', 'Agotado (visible, sin consulta)']].map(([v, l]) => h('option', { value: v, selected: p.status === v }, l))),
-    offer: h('input', { type: 'checkbox', checked: !!p.offer, id: 'offchk' })
+    category: h('select', { required: true }, [h('option', { value: '' }, 'Elegí un tipo…'), ...CONFIG.categories.map(c => h('option', { value: c, selected: p.category === c }, c))]),
+    featured: h('input', { type: 'checkbox', checked: !!p.featured, id: 'featchk' }),
+    status: h('select', {}, [['active', 'Disponible'], ['paused', 'Guardado (no se muestra en el sitio)'], ['soldout', 'Agotado']].map(([v, l]) => h('option', { value: v, selected: p.status === v }, l)))
   };
   const fld = (label, el, hint) => h('div', { class: 'fld' }, h('label', {}, label), el, hint ? h('small', {}, hint) : null);
   const photoBox = h('div', { class: 'photos' });
@@ -191,33 +206,38 @@ async function openForm(pkg) {
   const save = h('button', { class: 'btn btn-clay', type: 'submit' }, 'Guardar paquete');
   const form = h('form', { onsubmit: async e => {
     e.preventDefault();
-    const status = f.status.value, offer = f.offer.checked;
-    if (offer && status === 'active' && capFull(p.id)) return toast(CAP_MSG, 'err');
+    const status = f.status.value;
+    const feat = f.featured.checked && status !== 'paused';
+    if (feat && featCount(p.id) >= MAXF) return toast(`Ya hay ${MAXF} destacados. Quitá uno para poder destacar otro.`, 'err');
+    if (!f.category.value) return toast('Elegí el tipo de viaje (' + CONFIG.categories.join(', ') + ')', 'err');
+    if (status !== 'paused' && full(f.category.value, p.id)) return toast(catMsg(f.category.value), 'err');
     const out = { ...p, title: f.title.value.trim(), destination: f.destination.value.trim(), duration: f.duration.value.trim(),
       price: f.price.value === '' ? null : Number(f.price.value), oldPrice: f.oldPrice.value === '' ? null : Number(f.oldPrice.value),
       currency: f.currency.value, priceNote: f.priceNote.value.trim(), dates: lines(f.dates.value), description: f.description.value.trim(),
-      includes: lines(f.includes.value), status, offer, offerOrder: offer ? (p.offerOrder || (activeOffers(p.id).length + 1)) : 0 };
+      includes: lines(f.includes.value), category: f.category.value, status, featured: feat, offer: false, offerOrder: 0 };
     save.disabled = true; save.textContent = 'Guardando…';
     try {
       if (changed) out.thumb = photos[0] ? await toDataUrl(photos[0], 480, .7) : '';
       await store.savePackage(out, changed ? photos : undefined);
       const i = packages.findIndex(x => x.id === out.id); if (i >= 0) packages[i] = out; else packages.push(out);
-      close(); renderPanel(); toast('Paquete guardado ✔');
+      ptab = out.category || ptab; close(); renderPanel(); toast('Paquete guardado ✔');
     } catch (ex) { toast('No se pudo guardar: ' + ex.message, 'err'); save.disabled = false; save.textContent = 'Guardar paquete'; }
   } },
     h('h2', { style: 'font-size:26px' }, isNew ? 'Nuevo paquete' : 'Editar paquete'),
     fld('Nombre del paquete', f.title), fld('Destino', f.destination),
-    h('div', { class: 'two' }, fld('Duración', f.duration), fld('Estado', f.status)),
+    h('div', { class: 'two' }, fld('Duración', f.duration), fld('Tipo de viaje', f.category)),
+    fld('Estado', f.status, `"Disponible" y "Agotado" se muestran en el sitio (hasta ${MAX} por tipo). "Guardado" lo deja solo en el panel, sin mostrarlo.`),
     h('div', { class: 'two' }, fld('Precio', f.price), fld('Moneda', f.currency)),
     h('div', { class: 'two' }, fld('Precio anterior (opcional)', f.oldPrice, 'Se muestra tachado'), fld('Aclaración del precio', f.priceNote)),
     fld('Fechas de salida', f.dates, 'Una por línea'),
     fld('Descripción', f.description),
     fld('Qué incluye', f.includes, 'Un ítem por línea'),
+    h('label', { style: 'display:flex;gap:10px;align-items:center;font-weight:700' }, f.featured, `★ Mostrar en "Destacados" del inicio (máximo ${MAXF})`),
     h('div', { class: 'fld' }, h('label', {}, `Fotos (hasta 5, la primera es la principal)`), file, photoBox),
-    h('label', { style: 'display:flex;gap:10px;align-items:center;font-weight:700' }, f.offer, `Mostrar como oferta destacada (máximo ${MAX} activas)`),
     h('div', { style: 'display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap' }, h('button', { class: 'btn btn-line', type: 'button', style: 'color:var(--ink)', onclick: close }, 'Cancelar'), save));
   sheet.replaceChildren(h('button', { class: 'close', type: 'button', onclick: close, 'aria-label': 'Cerrar' }, '×'), form);
 }
+
 
 /* ---------- ajustes ---------- */
 function viewSettings() {
@@ -227,28 +247,66 @@ function viewSettings() {
     el.addEventListener('input', () => { s[k] = el.value; });
     return h('div', { class: 'fld' }, h('label', {}, label), el, hint ? h('small', {}, hint) : null);
   };
-  const heroPrev = h('img', { alt: '', style: 'max-width:240px;border-radius:8px', hidden: !safeImg(s.heroImage), src: safeImg(s.heroImage) || undefined });
-  const heroFile = h('input', { type: 'file', accept: 'image/*', onchange: async e => {
+  const aboutPrev = h('img', { alt: '', style: 'max-width:200px;border-radius:12px', hidden: !safeImg(s.aboutImage), src: safeImg(s.aboutImage) || undefined });
+  const aboutFile = h('input', { type: 'file', accept: 'image/*', onchange: async e => {
     const x = e.target.files[0]; if (!x) return;
-    try { const [d] = await fit([await toDataUrl(x, 1600, .6)], 400000); s.heroImage = d; heroPrev.src = d; heroPrev.hidden = false; } catch (ex) { toast(ex.message, 'err'); }
+    try { const [d] = await fit([await toDataUrl(x, 900, .7)], 300000); s.aboutImage = d; aboutPrev.src = d; aboutPrev.hidden = false; } catch (ex) { toast(ex.message, 'err'); }
   } });
+  const docCard = n => {
+    const cur = () => safeImg(s['q15Img' + n]) || s['q15ImgUrl' + n] || '';
+    const prev = h('img', { alt: '', referrerpolicy: 'no-referrer', class: 'doc-prev', hidden: !cur(), src: cur() || undefined });
+    const file = h('input', { type: 'file', accept: 'image/*', onchange: async e => {
+      const x = e.target.files[0]; if (!x) return;
+      try { const [d] = await fit([await toDataUrl(x, 800, .7)], 150000); s['q15Img' + n] = d; prev.src = d; prev.hidden = false; } catch (ex) { toast(ex.message, 'err'); }
+    } });
+    const link = h('input', { type: 'url', value: s['q15ImgUrl' + n] || '', placeholder: 'https://... (opcional, en vez de subir un archivo)' });
+    link.addEventListener('input', () => { s['q15ImgUrl' + n] = link.value.trim(); if (/^https:\/\//i.test(link.value.trim())) { prev.src = link.value.trim(); prev.hidden = false; } });
+    const clear = h('button', { class: 'sm', type: 'button', onclick: () => { delete s['q15Img' + n]; s['q15ImgUrl' + n] = ''; link.value = ''; file.value = ''; prev.hidden = true; } }, 'Quitar foto');
+    const name = h('input', { value: s['q15Label' + n] || '', maxlength: 40, placeholder: n === 1 ? 'Ej: Bariloche 2027' : '' });
+    name.addEventListener('input', () => { s['q15Label' + n] = name.value; });
+    const url = h('input', { type: 'text', value: s['q15Url' + n] || '', placeholder: 'https://drive.google.com/...' });
+    url.addEventListener('input', () => { s['q15Url' + n] = url.value.trim(); });
+    return h('fieldset', { class: 'doc-card' },
+      h('legend', {}, `Tarjeta ${n}`),
+      h('div', { class: 'doc-grid' },
+        h('div', { class: 'doc-photo' }, prev, h('div', { class: 'doc-photo-ctl' }, h('label', {}, 'Foto'), file, link, clear)),
+        h('div', { class: 'doc-data' },
+          h('div', { class: 'fld' }, h('label', {}, 'Nombre del botón'), name),
+          h('div', { class: 'fld' }, h('label', {}, 'Link del PDF'), url, n === 1 ? h('small', {}, 'Subí el PDF a Google Drive → Compartir → "Cualquier persona con el enlace" → Copiar enlace. Si dejás los links vacíos, el banner no se muestra.') : null))));
+  };
   return h('form', { style: 'display:grid;gap:14px;max-width:640px', onsubmit: async e => {
     e.preventDefault();
     if (!/^\d{10,15}$/.test(String(s.whatsapp).replace(/\D/g, ''))) return toast('Revisá el número de WhatsApp (con código de país, ej: 5491112345678)', 'err');
     if (s.armaUrl && !/^https?:\/\//i.test(s.armaUrl)) return toast('El link de "Armá tu viaje" debe empezar con https://', 'err');
+    for (const n of [1, 2, 3, 4]) if (s['q15Url' + n] && !/^(https:\/\/|docs\/)/i.test(s['q15Url' + n])) return toast(`El link del documento ${n} tiene que empezar con https:// (o con docs/ si el archivo está dentro del sitio)`, 'err');
+    for (const n of [1, 2, 3, 4]) if (s['q15ImgUrl' + n] && !/^https:\/\//i.test(s['q15ImgUrl' + n])) return toast(`El link de la foto del documento ${n} tiene que empezar con https://`, 'err');
     try { await store.saveSettings({ ...s, whatsapp: String(s.whatsapp).replace(/\D/g, '') }); settings = s; toast('Ajustes guardados ✔'); }
     catch (ex) { toast('No se pudo guardar: ' + ex.message, 'err'); }
   } },
     h('h2', {}, 'Ajustes del sitio'),
     mk('whatsapp', 'WhatsApp de consultas', { inputmode: 'numeric', required: true }, 'Con código de país y sin signos. Argentina celular: 549 + área + número'),
-    mk('armaUrl', 'Link del botón "Armá tu viaje"', { type: 'url', placeholder: 'https://…' }, 'Si lo dejás vacío, el botón abre WhatsApp'),
-    mk('heroTitle', 'Título de inicio', { maxlength: 90 }),
+    mk('armaUrl', 'Link del botón "Armá tu viaje"', { type: 'url', placeholder: 'https://www.terromadasviajes.com' }, 'A dónde lleva el botón. Si lo dejás vacío, abre WhatsApp'),
+    mk('heroTitle', 'Título de inicio (línea 1, letra fina)', { maxlength: 60 }),
+    mk('heroTitle2', 'Título de inicio (línea 2, en negrita)', { maxlength: 60 }),
+    mk('heroScript', 'Frase manuscrita de inicio', { maxlength: 100 }),
     mk('heroText', 'Texto de inicio', { maxlength: 220 }, '', 'textarea'),
-    mk('about', 'Texto "Nosotros"', { maxlength: 700 }, '', 'textarea'),
+    mk('about', 'Historia (Nosotros). Separá los párrafos con una línea en blanco', { maxlength: 1800 }, '', 'textarea'),
+    mk('owner', 'Nombre de la titular (firma)'),
+    mk('ownerRole', 'Cargo o título de la titular'),
+    mk('address', 'Dirección de la agencia'),
+    mk('hours', 'Horario de atención'),
+    mk('legajo', 'Legajo o habilitación (ej: Legajo RNAV 19334)'),
     mk('instagram', 'Instagram (usuario)', { placeholder: 'terromadas' }),
+    mk('facebook', 'Facebook (usuario o página, opcional)'),
+    mk('tiktok', 'TikTok (usuario, opcional)'),
+    mk('q15Title', 'Banner "Viajes de 15": título', { maxlength: 60 }),
+    mk('q15Text', 'Banner "Viajes de 15": texto', { maxlength: 200 }, '', 'textarea'),
+    ...[1, 2, 3, 4].map(docCard),
+    h('div', { class: 'fld' }, h('label', {}, 'Banner de quince: al tocar una tarjeta'),
+      h('select', { onchange: e => { s.q15Mode = e.target.value; } }, [['ver', 'Abrir el PDF para verlo (recomendado)'], ['descargar', 'Descargar el PDF directamente']].map(([v, l]) => h('option', { value: v, selected: (s.q15Mode || 'ver') === v }, l)))),
     mk('email', 'Email de contacto (opcional)', { type: 'email' }),
     mk('city', 'Ciudad / zona (opcional)'),
-    h('div', { class: 'fld' }, h('label', {}, 'Foto principal de inicio (opcional)'), heroFile, heroPrev),
+    h('div', { class: 'fld' }, h('label', {}, 'Foto de la titular, sección Nosotros (opcional)'), aboutFile, aboutPrev),
     h('button', { class: 'btn btn-clay', type: 'submit', style: 'justify-self:start' }, 'Guardar ajustes'),
     isDemo ? h('button', { class: 'sm', type: 'button', onclick: async () => { if (confirm('¿Volver a los datos de ejemplo?')) { await store.resetDemo(); showPanel(); } } }, 'Reiniciar datos de ejemplo (demo)') : null);
 }
